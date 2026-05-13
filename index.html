@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Бібліотека">
+<meta name="theme-color" content="#1a1a2e">
+<title>Моя бібліотека</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --surface2: #222238;
+  --surface3: #2a2a45;
+  --accent: #c9a84c;
+  --accent2: #e8c97a;
+  --text: #f0ede8;
+  --text2: #a09d96;
+  --text3: #5a5870;
+  --done: #4caf7d;
+  --reading: #c9a84c;
+  --want: #7c6af5;
+  --danger: #e05555;
+  --r: 14px;
+  --r2: 20px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+/* LAYOUT */
+.app { display: flex; flex-direction: column; height: 100dvh; height: 100vh; }
+.header {
+  padding: env(safe-area-inset-top, 44px) 20px 0;
+  background: var(--bg);
+  position: relative;
+  z-index: 10;
+}
+.header-inner { padding: 12px 0 4px; display: flex; align-items: center; justify-content: space-between; }
+.header-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.header-title span { color: var(--accent); }
+.header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.add-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent); border: none; color: var(--bg);
+  font-size: 22px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-weight: 300; transition: transform .15s, opacity .15s;
+  flex-shrink: 0;
+}
+.add-btn:active { transform: scale(.92); opacity: .85; }
+
+.content { flex: 1; overflow: hidden; position: relative; }
+.scroll { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 20px 120px; }
+
+/* SEARCH & FILTERS */
+.search-wrap { position: relative; margin-bottom: 12px; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text3); pointer-events: none; }
+.search-input {
+  width: 100%; padding: 12px 14px 12px 40px;
+  background: var(--surface); border: 1px solid var(--surface3);
+  border-radius: var(--r); color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif;
+  outline: none; transition: border-color .2s;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--accent); }
+.clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: var(--surface3); border: none; color: var(--text2); width: 20px; height: 20px; border-radius: 50%; font-size: 12px; display: none; align-items: center; justify-content: center; cursor: pointer; }
+.clear-btn.show { display: flex; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; margin-bottom: 16px; }
+.filters::-webkit-scrollbar { display: none; }
+.filter-chip {
+  white-space: nowrap; padding: 6px 14px; border-radius: 20px; font-size: 13px;
+  border: 1px solid var(--surface3); background: var(--surface); color: var(--text2);
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.filter-chip.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
+
+/* SECTION HEADERS */
+.section-hd { font-size: 11px; font-weight: 500; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; margin: 20px 0 10px; }
+.result-count { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+
+/* BOOK CARDS */
+.book-list { display: flex; flex-direction: column; gap: 10px; }
+.book-card {
+  background: var(--surface); border-radius: var(--r2); padding: 14px 16px;
+  display: flex; gap: 14px; align-items: flex-start;
+  border: 1px solid var(--surface3); transition: border-color .2s, transform .1s;
+  position: relative; overflow: hidden;
+}
+.book-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.book-card.done::before { background: var(--done); }
+.book-card.reading::before { background: var(--reading); }
+.book-card.want::before { background: var(--want); }
+.book-card:active { transform: scale(.98); }
+
+.book-spine {
+  width: 42px; height: 56px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.book-body { flex: 1; min-width: 0; }
+.book-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 500; line-height: 1.3; margin-bottom: 3px; }
+.book-author { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+.book-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: 11px; padding: 3px 9px; border-radius: 8px; font-weight: 500; }
+.chip-genre { background: rgba(124,106,245,.2); color: #a898f8; }
+.chip-year { background: var(--surface2); color: var(--text2); }
+.chip-rating { color: var(--accent2); background: rgba(201,168,76,.12); }
+.chip-done { background: rgba(76,175,125,.15); color: #6fd4a0; }
+.chip-reading { background: rgba(201,168,76,.15); color: #e8c97a; }
+.chip-want { background: rgba(124,106,245,.15); color: #a898f8; }
+.book-menu-btn {
+  background: none; border: none; color: var(--text3); padding: 4px; cursor: pointer; font-size: 18px; line-height: 1; flex-shrink: 0; border-radius: 8px;
+}
+.book-menu-btn:active { background: var(--surface3); }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 60px 20px; color: var(--text2); }
+.empty-icon { font-size: 56px; margin-bottom: 16px; opacity: .4; }
+.empty-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
+.empty-sub { font-size: 14px; line-height: 1.6; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  padding: 0 20px env(safe-area-inset-bottom, 20px);
+  background: var(--surface); border-top: 1px solid var(--surface3);
+  display: flex; gap: 4px;
+}
+.nav-btn {
+  flex: 1; padding: 10px 4px 4px; background: none; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--text3); font-size: 10px; font-family: 'DM Sans', sans-serif; letter-spacing: .03em;
+  border-radius: 10px; transition: color .15s;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-icon { font-size: 22px; line-height: 1; }
+
+/* MODAL */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100;
+  display: flex; align-items: flex-end; opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.overlay.show { opacity: 1; pointer-events: all; }
+.sheet {
+  width: 100%; background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 12px 20px env(safe-area-inset-bottom, 24px);
+  max-height: 92dvh; max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.32,.72,0,1);
+}
+.overlay.show .sheet { transform: translateY(0); }
+.sheet-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 0 auto 16px; }
+.sheet-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+.form-field { margin-bottom: 14px; }
+.form-label { font-size: 12px; color: var(--text2); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 13px 14px; background: var(--surface2);
+  border: 1px solid var(--surface3); border-radius: var(--r);
+  color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none;
+  transition: border-color .2s; -webkit-appearance: none;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input option { background: var(--surface2); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn { flex: 1; padding: 14px; border-radius: var(--r); font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: none; cursor: pointer; transition: opacity .15s, transform .1s; }
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn-gold { background: var(--accent); color: var(--bg); }
+.btn-ghost { background: var(--surface2); color: var(--text); }
+
+/* CONTEXT MENU */
+.ctx-menu {
+  position: fixed; z-index: 200; background: var(--surface2);
+  border: 1px solid var(--surface3); border-radius: 14px; padding: 6px;
+  min-width: 160px; box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  animation: fadeIn .12s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:scale(.95) } to { opacity:1; transform:scale(1) } }
+.ctx-item {
+  padding: 10px 14px; border-radius: 9px; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; color: var(--text);
+}
+.ctx-item:hover { background: var(--surface3); }
+.ctx-item.danger { color: var(--danger); }
+.ctx-sep { height: 1px; background: var(--surface3); margin: 4px 0; }
+
+/* VIEWS */
+#view-search, #view-authors, #view-stats { display: none; }
+#view-search.active, #view-authors.active, #view-stats.active { display: block; }
+
+/* AUTHORS */
+.author-card {
+  background: var(--surface); border: 1px solid var(--surface3); border-radius: var(--r2);
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+  cursor: pointer; transition: border-color .15s;
+}
+.author-card:active { border-color: var(--accent); }
+.author-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--surface3), var(--surface2));
+  border: 1px solid var(--surface3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 17px; color: var(--accent);
+  flex-shrink: 0;
+}
+.author-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 500; }
+.author-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.author-count-badge {
+  margin-left: auto; background: var(--surface3); border-radius: 10px;
+  padding: 4px 10px; font-size: 13px; font-weight: 500; color: var(--accent); flex-shrink: 0;
+}
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--surface3);
+  border-radius: var(--r2); padding: 16px;
+}
+.stat-num { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--accent); line-height: 1; }
+.stat-lbl { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.genre-bar { margin-bottom: 10px; }
+.genre-name { font-size: 13px; color: var(--text2); margin-bottom: 5px; display: flex; justify-content: space-between; }
+.genre-track { height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+.genre-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+/* IMPORT TEXTAREA */
+.import-area { width: 100%; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--surface3); border-radius: var(--r); color: var(--text); font-size: 13px; font-family: monospace; min-height: 100px; resize: vertical; outline: none; }
+.import-area:focus { border-color: var(--accent); }
+
+.divider { height: 1px; background: var(--surface3); margin: 20px 0; }
+.import-section-title { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 6px; }
+.import-section-sub { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+.msg { font-size: 13px; padding: 8px 12px; border-radius: 8px; margin-top: 10px; }
+.msg.success { background: rgba(76,175,125,.15); color: #6fd4a0; }
+.msg.error { background: rgba(224,85,85,.15); color: #f08080; }
+
+/* HINT BANNER */
+.hint-banner {
+  background: linear-gradient(135deg, rgba(201,168,76,.12), rgba(124,106,245,.1));
+  border: 1px solid rgba(201,168,76,.25); border-radius: var(--r2); padding: 16px;
+  margin-bottom: 16px;
+}
+.hint-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--accent2); }
+.hint-steps { font-size: 13px; color: var(--text2); line-height: 1.8; }
+.hint-steps b { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <div class="header-title">Моя <span>бібліотека</span></div>
+        <div class="header-sub" id="headerSub">Завантаження...</div>
+      </div>
+      <button class="add-btn" onclick="openAdd()" aria-label="Додати книгу">+</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="scroll" id="mainScroll">
+      <!-- SEARCH VIEW -->
+      <div id="view-search" class="active">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="searchInput" type="text" placeholder="Назва або автор..." oninput="onSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="clear-btn" id="clearBtn" onclick="clearSearch()">✕</button>
+        </div>
+        <div class="filters" id="filterBar">
+          <button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">Всі</button>
+          <button class="filter-chip" data-filter="done" onclick="setFilter('done',this)">✓ Прочитано</button>
+          <button class="filter-chip" data-filter="reading" onclick="setFilter('reading',this)">📖 Читаю</button>
+          <button class="filter-chip" data-filter="want" onclick="setFilter('want',this)">🔖 Хочу</button>
+        </div>
+        <div id="resultCount" class="result-count"></div>
+        <div id="bookList" class="book-list"></div>
+      </div>
+
+      <!-- AUTHORS VIEW -->
+      <div id="view-authors">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="authorSearchInput" type="text" placeholder="Пошук автора..." oninput="renderAuthors()" autocomplete="off">
+        </div>
+        <div id="authorList"></div>
+      </div>
+
+      <!-- STATS VIEW -->
+      <div id="view-stats">
+        <div id="statsContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-search" onclick="switchView('search')">
+      <span class="nav-icon">🔍</span>Пошук
+    </button>
+    <button class="nav-btn" id="nav-authors" onclick="switchView('authors')">
+      <span class="nav-icon">👤</span>Автори
+    </button>
+    <button class="nav-btn" id="nav-stats" onclick="switchView('stats')">
+      <span class="nav-icon">📊</span>Статистика
+    </button>
+    <button class="nav-btn" id="nav-import" onclick="openImport()">
+      <span class="nav-icon">⬆️</span>Імпорт
+    </button>
+  </div>
+</div>
+
+<!-- ADD/EDIT SHEET -->
+<div class="overlay" id="addOverlay" onclick="if(event.target===this)closeAdd()">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle">Нова книга</div>
+    <div class="form-field">
+      <div class="form-label">Назва *</div>
+      <input class="form-input" id="f-title" type="text" placeholder="Введіть назву книги">
+    </div>
+    <div class="form-field">
+      <div class="form-label">Автор *</div>
+      <input class="form-input" id="f-author" type="text" placeholder="Ім'я автора" list="authors-list">
+      <datalist id="authors-list"></datalist>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <div class="form-label">Рік видання</div>
+        <input class="form-input" id="f-year" type="number" placeholder="2024" min="0" max="2099">
+      </div>
+      <div class="form-field">
+        <div class="form-label">Жанр</div>
+        <input class="form-input" id="f-genre" type="text" placeholder="Роман..." list="genres-list">
+        <datalist id="genres-list"></datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <div class="form-label">Статус</div>
+        <select class="form-input" id="f-status">
+          <option value="done">✓ Прочитано</option>
+          <option value="reading">📖 Читаю</option>
+          <option value="want">🔖 Хочу прочитати</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <div class="form-label">Оцінка</div>
+        <select class="form-input" id="f-rating">
+          <option value="">Без оцінки</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★☆</option>
+          <option value="3">★★★☆☆</option>
+          <option value="2">★★☆☆☆</option>
+          <option value="1">★☆☆☆☆</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field">
+      <div class="form-label">Нотатки</div>
+      <textarea class="form-input" id="f-notes" placeholder="Враження, цитати, думки..." rows="3" style="resize:vertical"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeAdd()">Скасувати</button>
+      <button class="btn btn-gold" id="saveBtn" onclick="saveBook()">Додати</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT SHEET -->
+<div class="overlay" id="importOverlay" onclick="if(event.target===this)closeImport()">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Імпорт / Експорт</div>
+
+    <div class="hint-banner">
+      <div class="hint-title">📱 Як встановити як додаток</div>
+      <div class="hint-steps">
+        1. Відкрийте цей файл у <b>Safari</b><br>
+        2. Натисніть <b>□↑</b> (кнопка "Поділитись")<br>
+        3. Виберіть <b>"На екран «Домів»"</b><br>
+        4. Натисніть <b>Додати</b> — готово!
+      </div>
+    </div>
+
+    <div class="import-section-title">Імпорт з CSV</div>
+    <div class="import-section-sub">Вставте дані з Google Таблиць. Формат: Назва, Автор, Рік, Жанр, Статус (done/reading/want), Оцінка, Нотатки</div>
+    <textarea class="import-area" id="importData" placeholder="Назва,Автор,Рік,Жанр,Статус,Оцінка,Нотатки&#10;1984,Джордж Орвелл,1949,Антиутопія,done,5,Шедевр"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-gold" onclick="importCSV()" style="flex:2">Імпортувати</button>
+      <button class="btn btn-ghost" onclick="loadSample()" style="flex:1">Приклад</button>
+    </div>
+    <div id="importMsg"></div>
+
+    <div class="divider"></div>
+
+    <div class="import-section-title">Експорт CSV</div>
+    <div class="import-section-sub">Завантажте всі книги для Google Таблиць або резервної копії</div>
+    <button class="btn btn-ghost" onclick="exportCSV()" style="width:100%">⬇️ Завантажити CSV</button>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctxMenu" style="display:none"></div>
+<div id="ctxBg" style="position:fixed;inset:0;z-index:199;display:none" onclick="closeCtx()"></div>
+
+<script>
+const SPINE_COLORS = ['#2a1f4e','#1f3a2e','#3a1f1f','#1f2a3a','#3a2e1f','#2e1f3a','#1f3a3a'];
+const STATUS_MAP = { done:'прочитано', reading:'читаю', want:'хочу прочитати' };
+const STATUS_RV = { 'прочитано':'done','читаю':'reading','хочу прочитати':'want' };
+
+let books = [];
+let editIdx = null;
+let curFilter = 'all';
+let curView = 'search';
+
+function ls_get(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+function ls_set(k,v) { try { localStorage.setItem(k,v); } catch(e) {} }
+
+function load() {
+  const d = ls_get('mylib_books');
+  books = d ? JSON.parse(d) : [];
+  updateHeader();
+  renderBooks();
+  renderAuthors();
+  updateDataLists();
+}
+
+function save() {
+  ls_set('mylib_books', JSON.stringify(books));
+  updateHeader();
+  updateDataLists();
+}
+
+function updateHeader() {
+  const done = books.filter(b=>b.status==='done').length;
+  document.getElementById('headerSub').textContent = books.length
+    ? `${books.length} ${plBook(books.length)} · ${done} прочитано`
+    : 'Ваша особиста бібліотека';
+}
+
+function plBook(n) {
+  if(n===1) return 'книга';
+  if(n>=2&&n<=4) return 'книги';
+  return 'книг';
+}
+
+function switchView(name) {
+  curView = name;
+  document.querySelectorAll('[id^="view-"]').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-'+name).classList.add('active');
+  document.getElementById('mainScroll').scrollTop = 0;
+  if(name==='stats') renderStats();
+  if(name==='authors') renderAuthors();
+}
+
+function setFilter(f, el) {
+  curFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderBooks();
+}
+
+function onSearch() {
+  const q = document.getElementById('searchInput').value;
+  document.getElementById('clearBtn').classList.toggle('show', q.length > 0);
+  renderBooks();
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').classList.remove('show');
+  renderBooks();
+}
+
+function renderBooks() {
+  const q = (document.getElementById('searchInput').value||'').toLowerCase();
+  let filtered = books.filter(b => {
+    const mq = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
+    const mf = curFilter==='all' || b.status===curFilter;
+    return mq && mf;
+  });
+  const cnt = document.getElementById('resultCount');
+  cnt.textContent = filtered.length && (q||curFilter!=='all')
+    ? `Знайдено: ${filtered.length} ${plBook(filtered.length)}` : '';
+
+  const list = document.getElementById('bookList');
+  if(!filtered.length) {
+    list.innerHTML = `<div class="empty">
+      <div class="empty-icon">${books.length?'🔎':'📚'}</div>
+      <div class="empty-title">${books.length?'Нічого не знайдено':'Бібліотека порожня'}</div>
+      <div class="empty-sub">${books.length?'Спробуйте інший запит або фільтр':'Натисніть + щоб додати першу книгу'}</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(b => {
+    const idx = books.indexOf(b);
+    const color = SPINE_COLORS[idx % SPINE_COLORS.length];
+    const stars = b.rating ? '★'.repeat(+b.rating)+'☆'.repeat(5-+b.rating) : '';
+    return `<div class="book-card ${b.status||'done'}" onclick="openCtxByCard(event,${idx})">
+      <div class="book-spine" style="background:${color}">📖</div>
+      <div class="book-body">
+        <div class="book-title">${esc(b.title)}</div>
+        <div class="book-author">${esc(b.author)}</div>
+        <div class="book-chips">
+          ${b.year?`<span class="chip chip-year">${b.year}</span>`:''}
+          ${b.genre?`<span class="chip chip-genre">${esc(b.genre)}</span>`:''}
+          <span class="chip chip-${b.status||'done'}">${STATUS_MAP[b.status]||b.status}</span>
+          ${stars?`<span class="chip chip-rating">${stars}</span>`:''}
+        </div>
+      </div>
+      <button class="book-menu-btn" onclick="openCtx(event,${idx})" aria-label="Дії">⋯</button>
+    </div>`;
+  }).join('');
+}
+
+function renderAuthors() {
+  const q = (document.getElementById('authorSearchInput')||{value:''}).value.toLowerCase();
+  const map = {};
+  books.forEach(b=>{
+    const a = b.author||'Невідомо';
+    if(!map[a]) map[a]={count:0,done:0,titles:[]};
+    map[a].count++;
+    if(b.status==='done') map[a].done++;
+    map[a].titles.push(b.title);
+  });
+  let list = Object.entries(map).filter(([a])=>!q||a.toLowerCase().includes(q))
+    .sort((x,y)=>y[1].count-x[1].count);
+  const el = document.getElementById('authorList');
+  if(!list.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Авторів не знайдено</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(([name,d])=>{
+    const initials = name.split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+    return `<div class="author-card" onclick="filterByAuthor('${esc(name)}')">
+      <div class="author-avatar">${initials||'?'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="author-name">${esc(name)}</div>
+        <div class="author-meta">${d.titles.slice(0,2).map(t=>esc(t)).join(' · ')}${d.titles.length>2?` +${d.titles.length-2}`:''}</div>
+      </div>
+      <div class="author-count-badge">${d.count} кн.</div>
+    </div>`;
+  }).join('');
+}
+
+function filterByAuthor(name) {
+  switchView('search');
+  document.getElementById('searchInput').value = name;
+  document.getElementById('clearBtn').classList.add('show');
+  curFilter = 'all';
+  document.querySelectorAll('.filter-chip').forEach((c,i)=>c.classList.toggle('active',i===0));
+  renderBooks();
+}
+
+function renderStats() {
+  const total = books.length;
+  const done = books.filter(b=>b.status==='done').length;
+  const reading = books.filter(b=>b.status==='reading').length;
+  const want = books.filter(b=>b.status==='want').length;
+  const rated = books.filter(b=>b.rating);
+  const avg = rated.length ? (rated.reduce((s,b)=>s+(+b.rating),0)/rated.length).toFixed(1) : '—';
+  const genres = {};
+  books.forEach(b=>{ if(b.genre) genres[b.genre]=(genres[b.genre]||0)+1; });
+  const topG = Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  if(!total) {
+    document.getElementById('statsContent').innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Поки немає даних</div><div class="empty-sub">Додайте книги, щоб побачити статистику</div></div>`;
+    return;
+  }
+  document.getElementById('statsContent').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-lbl">Всього книг</div></div>
+      <div class="stat-card"><div class="stat-num">${done}</div><div class="stat-lbl">Прочитано</div></div>
+      <div class="stat-card"><div class="stat-num">${reading}</div><div class="stat-lbl">Читаю зараз</div></div>
+      <div class="stat-card"><div class="stat-num">${avg}</div><div class="stat-lbl">Середня оцінка</div></div>
+    </div>
+    ${topG.length?`
+    <div class="section-hd">Популярні жанри</div>
+    ${topG.map(([g,c])=>`
+      <div class="genre-bar">
+        <div class="genre-name"><span>${esc(g)}</span><span>${c} кн.</span></div>
+        <div class="genre-track"><div class="genre-fill" style="width:${Math.round(c/total*100)}%"></div></div>
+      </div>`).join('')}`:''}
+    <div class="divider"></div>
+    <div class="section-hd">Статус</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:140px;background:var(--surface);border:1px solid var(--surface3);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Прогрес читання</div>
+        <div style="font-size:22px;font-weight:500;color:var(--done)">${total?Math.round(done/total*100):0}%</div>
+        <div style="margin-top:8px;height:4px;background:var(--surface3);border-radius:2px"><div style="height:100%;width:${total?Math.round(done/total*100):0}%;background:var(--done);border-radius:2px"></div></div>
+      </div>
+      <div style="flex:1;min-width:140px;background:var(--surface);border:1px solid var(--surface3);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Хочу прочитати</div>
+        <div style="font-size:22px;font-weight:500;color:var(--want)">${want}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">у списку очікування</div>
+      </div>
+    </div>
+  `;
+}
+
+function updateDataLists() {
+  const authors = [...new Set(books.map(b=>b.author).filter(Boolean))].sort();
+  const genres = [...new Set(books.map(b=>b.genre).filter(Boolean))].sort();
+  document.getElementById('authors-list').innerHTML = authors.map(a=>`<option value="${esc(a)}">`).join('');
+  document.getElementById('genres-list').innerHTML = genres.map(g=>`<option value="${esc(g)}">`).join('');
+}
+
+function openAdd(idx=null) {
+  editIdx = idx;
+  const b = idx!==null ? books[idx] : null;
+  document.getElementById('sheetTitle').textContent = b ? 'Редагувати' : 'Нова книга';
+  document.getElementById('saveBtn').textContent = b ? 'Зберегти' : 'Додати';
+  document.getElementById('f-title').value = b?.title||'';
+  document.getElementById('f-author').value = b?.author||'';
+  document.getElementById('f-year').value = b?.year||'';
+  document.getElementById('f-genre').value = b?.genre||'';
+  document.getElementById('f-status').value = b?.status||'done';
+  document.getElementById('f-rating').value = b?.rating||'';
+  document.getElementById('f-notes').value = b?.notes||'';
+  document.getElementById('addOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('f-title').focus(), 350);
+}
+
+function closeAdd() { document.getElementById('addOverlay').classList.remove('show'); }
+
+function saveBook() {
+  const title = document.getElementById('f-title').value.trim();
+  const author = document.getElementById('f-author').value.trim();
+  if(!title||!author) { alert('Введіть назву та автора'); return; }
+  const b = {
+    title, author,
+    year: document.getElementById('f-year').value||'',
+    genre: document.getElementById('f-genre').value.trim()||'',
+    status: document.getElementById('f-status').value||'done',
+    rating: document.getElementById('f-rating').value||'',
+    notes: document.getElementById('f-notes').value.trim()||''
+  };
+  if(editIdx!==null) books[editIdx]=b;
+  else books.push(b);
+  save(); closeAdd(); renderBooks(); renderAuthors();
+}
+
+function openCtx(e, idx) {
+  e.stopPropagation();
+  const b = books[idx];
+  const x = Math.min(e.clientX, window.innerWidth-180);
+  const y = Math.min(e.clientY, window.innerHeight-180);
+  document.getElementById('ctxBg').style.display='block';
+  document.getElementById('ctxMenu').style.cssText = `display:block;left:${x}px;top:${y}px`;
+  document.getElementById('ctxMenu').innerHTML = `
+    <div class="ctx-item" onclick="openAdd(${idx});closeCtx()">✏️ Редагувати</div>
+    <div class="ctx-item" onclick="toggleStatus(${idx});closeCtx()">🔄 Змінити статус</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item danger" onclick="deleteBook(${idx});closeCtx()">🗑 Видалити</div>
+  `;
+}
+
+function openCtxByCard(e, idx) {
+  if(e.target.closest('.book-menu-btn')) return;
+}
+
+function closeCtx() {
+  document.getElementById('ctxMenu').style.display='none';
+  document.getElementById('ctxBg').style.display='none';
+}
+
+function toggleStatus(idx) {
+  const order = ['done','reading','want'];
+  const cur = books[idx].status||'done';
+  books[idx].status = order[(order.indexOf(cur)+1)%3];
+  save(); renderBooks();
+}
+
+function deleteBook(idx) {
+  if(confirm(`Видалити «${books[idx].title}»?`)) {
+    books.splice(idx,1); save(); renderBooks(); renderAuthors();
+  }
+}
+
+function openImport() { document.getElementById('importOverlay').classList.add('show'); }
+function closeImport() { document.getElementById('importOverlay').classList.remove('show'); }
+
+function loadSample() {
+  document.getElementById('importData').value =
+`Кобзар,Тарас Шевченко,1840,Поезія,done,5,Вічна класика
+1984,Джордж Орвелл,1949,Антиутопія,done,5,Обов'язково читати
+Майстер і Маргарита,Михайло Булгаков,1967,Роман,done,5,Геніально
+Дюна,Френк Герберт,1965,Фантастика,reading,4,Читаю зараз
+Гаррі Поттер і камінь філософів,Джоан Роулінг,1997,Фентезі,done,4,
+Атлант розправив плечі,Айн Ренд,1957,Роман,want,,
+Людина в пошуках справжнього сенсу,Віктор Франкл,1946,Психологія,done,5,Змінила погляди`;
+}
+
+function importCSV() {
+  const raw = document.getElementById('importData').value.trim();
+  if(!raw) return;
+  let added = 0;
+  raw.split('\n').forEach((line,i)=>{
+    if(!line.trim()) return;
+    if(i===0 && /назва|title/i.test(line)) return;
+    const p = line.split(',').map(s=>s.trim().replace(/^["']|["']$/g,''));
+    if(p[0]&&p[1]) {
+      const st = p[4]||'done';
+      books.push({
+        title:p[0], author:p[1], year:p[2]||'', genre:p[3]||'',
+        status: ['done','reading','want'].includes(st)?st:(STATUS_RV[st]||'done'),
+        rating:p[5]||'', notes:p[6]||''
+      });
+      added++;
+    }
+  });
+  const msg = document.getElementById('importMsg');
+  if(added) {
+    save(); renderBooks(); renderAuthors();
+    msg.innerHTML = `<div class="msg success">✓ Додано ${added} ${plBook(added)}</div>`;
+  } else {
+    msg.innerHTML = `<div class="msg error">Не вдалося розпізнати дані. Перевірте формат.</div>`;
+  }
+}
+
+function exportCSV() {
+  const hdr = 'Назва,Автор,Рік,Жанр,Статус,Оцінка,Нотатки\n';
+  const rows = books.map(b=>[b.title,b.author,b.year,b.genre,STATUS_MAP[b.status]||b.status,b.rating,b.notes]
+    .map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+hdr+rows],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='бібліотека.csv'; a.click();
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){closeAdd();closeImport();closeCtx();} });
+load();
+</script>
+</body>
+</html>
