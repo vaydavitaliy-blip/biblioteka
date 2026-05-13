@@ -388,10 +388,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
     </div>
 
     <div class="import-section-title">Імпорт з CSV</div>
-    <div class="import-section-sub">Вставте дані з Google Таблиць. Формат: Назва, Автор, Рік, Жанр, Статус (done/reading/want), Оцінка, Нотатки</div>
-    <textarea class="import-area" id="importData" placeholder="Назва,Автор,Рік,Жанр,Статус,Оцінка,Нотатки&#10;1984,Джордж Орвелл,1949,Антиутопія,done,5,Шедевр"></textarea>
+    <div class="import-section-sub">Завантажте CSV файл з вашого телефону. Підтримується роздільник <b>;</b> або <b>,</b></div>
+    <label id="fileLabel" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px;border:1.5px dashed var(--surface3);border-radius:var(--r);cursor:pointer;color:var(--text2);font-size:14px;transition:border-color .2s">
+      <span style="font-size:28px">📂</span>
+      <span id="fileLabelText">Натисніть щоб вибрати файл</span>
+      <input type="file" id="csvFile" accept=".csv,.txt" style="display:none" onchange="onFileSelected()">
+    </label>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btn-gold" onclick="importCSV()" style="flex:2">Імпортувати</button>
+      <button class="btn btn-gold" id="importFileBtn" onclick="importCSVFile()" style="flex:2;opacity:.4;pointer-events:none">Імпортувати</button>
       <button class="btn btn-ghost" onclick="loadSample()" style="flex:1">Приклад</button>
     </div>
     <div id="importMsg"></div>
@@ -698,32 +702,70 @@ function loadSample() {
 Людина в пошуках справжнього сенсу,Віктор Франкл,1946,Психологія,done,5,Змінила погляди`;
 }
 
-function importCSV() {
-  const raw = document.getElementById('importData').value.trim();
+let csvFileContent = null;
+
+function onFileSelected() {
+  const file = document.getElementById('csvFile').files[0];
+  if(!file) return;
+  document.getElementById('fileLabelText').textContent = file.name;
+  document.getElementById('fileLabel').style.borderColor = 'var(--accent)';
+  const btn = document.getElementById('importFileBtn');
+  btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+  const reader = new FileReader();
+  reader.onload = e => { csvFileContent = e.target.result; };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line, delim) {
+  const result = [];
+  let cur = '', inQ = false;
+  for(let i=0;i<line.length;i++) {
+    const ch = line[i];
+    if(ch==='"') { inQ=!inQ; }
+    else if(ch===delim && !inQ) { result.push(cur.trim()); cur=''; }
+    else { cur+=ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function importCSVFile() {
+  const raw = csvFileContent;
   if(!raw) return;
-  let added = 0;
-  raw.split('\n').forEach((line,i)=>{
+  const lines = raw.split('\n').filter(l=>l.trim());
+  // Auto-detect delimiter
+  const firstLine = lines[0]||'';
+  const delim = firstLine.includes(';') ? ';' : ',';
+  let added = 0, skipped = 0;
+  lines.forEach((line,i)=>{
     if(!line.trim()) return;
-    if(i===0 && /назва|title/i.test(line)) return;
-    const p = line.split(',').map(s=>s.trim().replace(/^["']|["']$/g,''));
-    if(p[0]&&p[1]) {
-      const st = p[4]||'done';
+    if(i===0 && /назва|title|автор|author/i.test(line)) return;
+    const p = parseCSVLine(line, delim);
+    const title = (p[0]||'').replace(/^"|"$/g,'').trim();
+    const author = (p[1]||'').replace(/^"|"$/g,'').trim();
+    if(title && author) {
+      const st = (p[4]||'want').replace(/^"|"$/g,'').trim();
       books.push({
-        title:p[0], author:p[1], year:p[2]||'', genre:p[3]||'',
-        status: ['done','reading','want'].includes(st)?st:(STATUS_RV[st]||'done'),
-        rating:p[5]||'', notes:p[6]||''
+        title, author,
+        year: (p[2]||'').replace(/^"|"$/g,'').trim(),
+        genre: (p[3]||'').replace(/^"|"$/g,'').trim(),
+        status: ['done','reading','want'].includes(st)?st:(STATUS_RV[st]||'want'),
+        rating: (p[5]||'').replace(/^"|"$/g,'').trim(),
+        notes: (p[6]||'').replace(/^"|"$/g,'').trim()
       });
       added++;
-    }
+    } else { skipped++; }
   });
   const msg = document.getElementById('importMsg');
   if(added) {
     save(); renderBooks(); renderAuthors();
-    msg.innerHTML = `<div class="msg success">✓ Додано ${added} ${plBook(added)}</div>`;
+    msg.innerHTML = `<div class="msg success">✓ Додано ${added} ${plBook(added)}${skipped?` (пропущено ${skipped})`:''}</div>`;
   } else {
     msg.innerHTML = `<div class="msg error">Не вдалося розпізнати дані. Перевірте формат.</div>`;
   }
 }
+
+function importCSV() { importCSVFile(); }
 
 function exportCSV() {
   const hdr = 'Назва,Автор,Рік,Жанр,Статус,Оцінка,Нотатки\n';
