@@ -387,8 +387,16 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
       </div>
     </div>
 
-    <div class="import-section-title">Імпорт з CSV</div>
-    <div class="import-section-sub">Завантажте CSV файл з вашого телефону. Підтримується роздільник <b>;</b> або <b>,</b></div>
+    <div class="import-section-title">🔄 Синхронізація з Google Sheets</div>
+    <div class="import-section-sub">Дані читаються з вашої таблиці при відкритті. Нові книги записуються назад автоматично.</div>
+    <div id="syncStatus" style="padding:12px 14px;background:var(--surface2);border-radius:var(--r);font-size:13px;color:var(--text2);margin-bottom:10px">⏳ Очікування...</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-gold" onclick="syncFromSheets()" style="flex:1">⬇️ Оновити</button>
+      <button class="btn btn-ghost" onclick="syncToSheets()" style="flex:1">⬆️ Зберегти</button>
+    </div>
+    <div class="divider"></div>
+    <div class="import-section-title">Імпорт CSV (резервний)</div>
+    <div class="import-section-sub">Якщо синхронізація недоступна — завантажте файл вручну. Підтримується <b>;</b> або <b>,</b></div>
     <label id="fileLabel" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px;border:1.5px dashed var(--surface3);border-radius:var(--r);cursor:pointer;color:var(--text2);font-size:14px;transition:border-color .2s">
       <span style="font-size:28px">📂</span>
       <span id="fileLabelText">Натисніть щоб вибрати файл</span>
@@ -422,22 +430,123 @@ let editIdx = null;
 let curFilter = 'all';
 let curView = 'search';
 
+const SHEET_ID = '1LUZHlDvWa8RbN6zEgNYhm5PUa1X10OxgHxa88j8_TQc';
+const API_KEY  = 'AIzaSyDSlGU9ny01l926otJUgWeuxzOFVFrWXIg';
+const SHEET_NAME = 'Додаток'; // окремий лист для даних додатку
+
 function ls_get(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 function ls_set(k,v) { try { localStorage.setItem(k,v); } catch(e) {} }
 
-function load() {
+function setSyncStatus(msg, color='var(--text2)') {
+  const el = document.getElementById('syncStatus');
+  if(el) el.innerHTML = `<span style="color:${color}">${msg}</span>`;
+}
+
+async function load() {
+  // Load from localStorage first (instant)
   const d = ls_get('mylib_books');
-  books = d ? JSON.parse(d) : [];
-  updateHeader();
-  renderBooks();
-  renderAuthors();
-  updateDataLists();
+  if(d) { books = JSON.parse(d); updateHeader(); renderBooks(); renderAuthors(); updateDataLists(); }
+  // Then try Google Sheets
+  await syncFromSheets(true);
 }
 
 function save() {
   ls_set('mylib_books', JSON.stringify(books));
   updateHeader();
   updateDataLists();
+  // Auto-sync to sheets in background
+  syncToSheets(true);
+}
+
+async function syncFromSheets(silent=false) {
+  setSyncStatus('⏳ Завантаження з Google Sheets...');
+  try {
+    // Try to read from a flat sheet named "Додаток" with columns: title;author;year;genre;status;rating;notes
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:G?key=${API_KEY}`;
+    const res = await fetch(url);
+    if(res.status === 404) {
+      // Sheet doesn't exist yet — use localStorage data
+      setSyncStatus('ℹ️ Лист "Додаток" не знайдено. Натисніть "Зберегти" щоб створити його.', 'var(--accent)');
+      return;
+    }
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const rows = data.values || [];
+    if(rows.length <= 1) {
+      setSyncStatus('ℹ️ Таблиця порожня. Натисніть "Зберегти" щоб вивантажити книги.', 'var(--accent)');
+      return;
+    }
+    const parsed = [];
+    for(let i=1; i<rows.length; i++) {
+      const r = rows[i];
+      const title = (r[0]||'').trim();
+      const author = (r[1]||'').trim();
+      if(!title || !author) continue;
+      const st = (r[4]||'want').trim();
+      parsed.push({
+        title, author,
+        year: (r[2]||'').trim(),
+        genre: (r[3]||'').trim(),
+        status: ['done','reading','want'].includes(st) ? st : (STATUS_RV[st]||'want'),
+        rating: (r[5]||'').trim(),
+        notes: (r[6]||'').trim()
+      });
+    }
+    books = parsed;
+    ls_set('mylib_books', JSON.stringify(books));
+    updateHeader(); renderBooks(); renderAuthors(); updateDataLists();
+    setSyncStatus(`✓ Синхронізовано ${books.length} книг з Google Sheets`, 'var(--done)');
+  } catch(e) {
+    setSyncStatus(`⚠️ Помилка: ${e.message}. Використовуються локальні дані.`, 'var(--danger)');
+  }
+}
+
+async function syncToSheets(silent=false) {
+  if(!silent) setSyncStatus('⏳ Збереження в Google Sheets...');
+  try {
+    // Build rows: header + data
+    const header = [['Назва','Автор','Рік','Жанр','Статус','Оцінка','Нотатки']];
+    const rows = books.map(b => [b.title||'', b.author||'', b.year||'', b.genre||'', b.status||'want', b.rating||'', b.notes||'']);
+    const values = [...header, ...rows];
+
+    // First clear, then write
+    const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:G:clear?key=${API_KEY}`;
+    const clearRes = await fetch(clearUrl, { method: 'POST' });
+
+    if(clearRes.status === 403 || clearRes.status === 401) {
+      setSyncStatus('⚠️ Немає дозволу на запис. Потрібна OAuth авторизація.', 'var(--danger)');
+      showOAuthHint();
+      return;
+    }
+
+    const writeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A1?valueInputOption=RAW&key=${API_KEY}`;
+    const writeRes = await fetch(writeUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values })
+    });
+
+    if(!writeRes.ok) {
+      const err = await writeRes.json();
+      if(writeRes.status === 403) { showOAuthHint(); return; }
+      throw new Error(err.error?.message || writeRes.status);
+    }
+    if(!silent) setSyncStatus(`✓ Збережено ${books.length} книг у Google Sheets`, 'var(--done)');
+  } catch(e) {
+    if(!silent) setSyncStatus(`⚠️ Помилка запису: ${e.message}`, 'var(--danger)');
+  }
+}
+
+function showOAuthHint() {
+  setSyncStatus('🔐 API ключ дозволяє лише читання. Для запису потрібен OAuth токен — відкрийте інструкцію нижче.', 'var(--accent)');
+  const msg = document.getElementById('importMsg');
+  if(msg) msg.innerHTML = `<div class="msg" style="background:rgba(201,168,76,.12);color:var(--accent2);margin-top:10px">
+    <b>Як увімкнути запис у таблицю:</b><br>
+    1. Зайдіть у <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a><br>
+    2. APIs & Services → Credentials<br>
+    3. Створіть <b>OAuth 2.0 Client ID</b> (тип: Web application)<br>
+    4. Надішліть client_id сюди — я оновлю додаток
+  </div>`;
 }
 
 function updateHeader() {
