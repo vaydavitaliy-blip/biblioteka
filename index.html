@@ -430,9 +430,7 @@ let editIdx = null;
 let curFilter = 'all';
 let curView = 'search';
 
-const SHEET_ID = '1LUZHlDvWa8RbN6zEgNYhm5PUa1X10OxgHxa88j8_TQc';
-const API_KEY  = 'AIzaSyDSlGU9ny01l926otJUgWeuxzOFVFrWXIg';
-const SHEET_NAME = 'Додаток'; // окремий лист для даних додатку
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3WJJ23qwGxAv1UN-3bUIBtbFydZO6CB2NR0bDDixW31rXpX1WSiZQK_4iytx6fe0h-w/exec';
 
 function ls_get(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
 function ls_set(k,v) { try { localStorage.setItem(k,v); } catch(e) {} }
@@ -461,41 +459,17 @@ function save() {
 async function syncFromSheets(silent=false) {
   setSyncStatus('⏳ Завантаження з Google Sheets...');
   try {
-    // Try to read from a flat sheet named "Додаток" with columns: title;author;year;genre;status;rating;notes
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:G?key=${API_KEY}`;
-    const res = await fetch(url);
-    if(res.status === 404) {
-      // Sheet doesn't exist yet — use localStorage data
-      setSyncStatus('ℹ️ Лист "Додаток" не знайдено. Натисніть "Зберегти" щоб створити його.', 'var(--accent)');
-      return;
-    }
+    const res = await fetch(SCRIPT_URL);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const rows = data.values || [];
-    if(rows.length <= 1) {
-      setSyncStatus('ℹ️ Таблиця порожня. Натисніть "Зберегти" щоб вивантажити книги.', 'var(--accent)');
+    const parsed = await res.json();
+    if(!Array.isArray(parsed) || !parsed.length) {
+      setSyncStatus('ℹ️ Таблиця порожня.', 'var(--accent)');
       return;
-    }
-    const parsed = [];
-    for(let i=1; i<rows.length; i++) {
-      const r = rows[i];
-      const title = (r[0]||'').trim();
-      const author = (r[1]||'').trim();
-      if(!title || !author) continue;
-      const st = (r[4]||'want').trim();
-      parsed.push({
-        title, author,
-        year: (r[2]||'').trim(),
-        genre: (r[3]||'').trim(),
-        status: ['done','reading','want'].includes(st) ? st : (STATUS_RV[st]||'want'),
-        rating: (r[5]||'').trim(),
-        notes: (r[6]||'').trim()
-      });
     }
     books = parsed;
     ls_set('mylib_books', JSON.stringify(books));
     updateHeader(); renderBooks(); renderAuthors(); updateDataLists();
-    setSyncStatus(`✓ Синхронізовано ${books.length} книг з Google Sheets`, 'var(--done)');
+    setSyncStatus(`✓ Завантажено ${books.length} книг з Google Sheets`, 'var(--done)');
   } catch(e) {
     setSyncStatus(`⚠️ Помилка: ${e.message}. Використовуються локальні дані.`, 'var(--danger)');
   }
