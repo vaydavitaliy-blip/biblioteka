@@ -6,30 +6,30 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Бібліотека">
-<meta name="theme-color" content="#1a1a2e">
+<meta name="theme-color" content="#1a1614">
 <title>Моя бібліотека</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Ysabeau+Office:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f0f1a;
-  --surface: #1a1a2e;
-  --surface2: #222238;
-  --surface3: #2a2a45;
-  --accent: #c9a84c;
-  --accent2: #e8c97a;
-  --text: #f0ede8;
-  --text2: #a09d96;
-  --text3: #5a5870;
-  --done: #4caf7d;
-  --reading: #c9a84c;
-  --want: #7c6af5;
-  --danger: #e05555;
+  --bg: #1a1614;
+  --surface: #221c18;
+  --surface2: #2d251f;
+  --surface3: #3d3329;
+  --accent: #c2683a;
+  --accent2: #d8845a;
+  --text: #f0e6d6;
+  --text2: #a89684;
+  --text3: #6b5d50;
+  --done: #7a9870;
+  --reading: #c2683a;
+  --want: #8a6f4a;
+  --danger: #b85547;
   --r: 14px;
   --r2: 20px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Ysabeau Office', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
 /* LAYOUT */
 .app { display: flex; flex-direction: column; height: 100dvh; height: 100vh; }
@@ -61,7 +61,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .search-input {
   width: 100%; padding: 12px 14px 12px 40px;
   background: var(--surface); border: 1px solid var(--surface3);
-  border-radius: var(--r); color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif;
+  border-radius: var(--r); color: var(--text); font-size: 15px; font-family: 'Ysabeau Office', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   outline: none; transition: border-color .2s;
 }
 .search-input::placeholder { color: var(--text3); }
@@ -108,12 +108,12 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .book-author { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
 .book-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .chip { font-size: 11px; padding: 3px 9px; border-radius: 8px; font-weight: 500; }
-.chip-genre { background: rgba(124,106,245,.2); color: #a898f8; }
+.chip-genre { background: rgba(138,111,74,.22); color: #c2a880; }
 .chip-year { background: var(--surface2); color: var(--text2); }
-.chip-rating { color: var(--accent2); background: rgba(201,168,76,.12); }
-.chip-done { background: rgba(76,175,125,.15); color: #6fd4a0; }
-.chip-reading { background: rgba(201,168,76,.15); color: #e8c97a; }
-.chip-want { background: rgba(124,106,245,.15); color: #a898f8; }
+.chip-rating { color: #e8c97a; background: rgba(194,104,58,.14); }
+.chip-done { background: rgba(122,152,112,.18); color: #a4c89a; }
+.chip-reading { background: rgba(194,104,58,.18); color: #e8a880; }
+.chip-want { background: rgba(138,111,74,.20); color: #c2a880; }
 .book-menu-btn {
   background: none; border: none; color: var(--text3); padding: 4px; cursor: pointer; font-size: 18px; line-height: 1; flex-shrink: 0; border-radius: 8px;
 }
@@ -134,7 +134,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .nav-btn {
   flex: 1; padding: 10px 4px 4px; background: none; border: none; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  color: var(--text3); font-size: 10px; font-family: 'DM Sans', sans-serif; letter-spacing: .03em;
+  color: var(--text3); font-size: 10px; font-family: 'Ysabeau Office', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: .03em;
   border-radius: 10px; transition: color .15s;
 }
 .nav-btn.active { color: var(--accent); }
@@ -162,14 +162,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .form-input {
   width: 100%; padding: 13px 14px; background: var(--surface2);
   border: 1px solid var(--surface3); border-radius: var(--r);
-  color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none;
+  color: var(--text); font-size: 15px; font-family: 'Ysabeau Office', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; outline: none;
   transition: border-color .2s; -webkit-appearance: none;
 }
 .form-input:focus { border-color: var(--accent); }
 .form-input option { background: var(--surface2); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-actions { display: flex; gap: 10px; margin-top: 20px; }
-.btn { flex: 1; padding: 14px; border-radius: var(--r); font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: none; cursor: pointer; transition: opacity .15s, transform .1s; }
+.btn { flex: 1; padding: 14px; border-radius: var(--r); font-size: 15px; font-weight: 500; font-family: 'Ysabeau Office', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; border: none; cursor: pointer; transition: opacity .15s, transform .1s; }
 .btn:active { transform: scale(.97); opacity: .85; }
 .btn-gold { background: var(--accent); color: var(--bg); }
 .btn-ghost { background: var(--surface2); color: var(--text); }
@@ -237,16 +237,16 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .import-section-title { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 6px; }
 .import-section-sub { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
 .msg { font-size: 13px; padding: 8px 12px; border-radius: 8px; margin-top: 10px; }
-.msg.success { background: rgba(76,175,125,.15); color: #6fd4a0; }
-.msg.error { background: rgba(224,85,85,.15); color: #f08080; }
+.msg.success { background: rgba(122,152,112,.18); color: #a4c89a; }
+.msg.error { background: rgba(184,85,71,.18); color: #d68678; }
 
 /* HINT BANNER */
 .hint-banner {
-  background: linear-gradient(135deg, rgba(201,168,76,.12), rgba(124,106,245,.1));
-  border: 1px solid rgba(201,168,76,.25); border-radius: var(--r2); padding: 16px;
+  background: linear-gradient(135deg, rgba(194,104,58,.14), rgba(138,111,74,.10));
+  border: 1px solid rgba(194,104,58,.28); border-radius: var(--r2); padding: 16px;
   margin-bottom: 16px;
 }
-.hint-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--accent2); }
+.hint-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: #e8a880; }
 .hint-steps { font-size: 13px; color: var(--text2); line-height: 1.8; }
 .hint-steps b { color: var(--text); }
 </style>
@@ -421,7 +421,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 <div id="ctxBg" style="position:fixed;inset:0;z-index:199;display:none" onclick="closeCtx()"></div>
 
 <script>
-const SPINE_COLORS = ['#2a1f4e','#1f3a2e','#3a1f1f','#1f2a3a','#3a2e1f','#2e1f3a','#1f3a3a'];
+const SPINE_COLORS = ['#5a2a1f','#3d2a1f','#6b3a22','#2f3a26','#4a2f1a','#3a2418','#5a4023'];
 const STATUS_MAP = { done:'прочитано', reading:'читаю', want:'хочу прочитати' };
 const STATUS_RV = { 'прочитано':'done','читаю':'reading','хочу прочитати':'want' };
 
@@ -514,7 +514,7 @@ async function syncToSheets(silent=false) {
 function showOAuthHint() {
   setSyncStatus('🔐 API ключ дозволяє лише читання. Для запису потрібен OAuth токен — відкрийте інструкцію нижче.', 'var(--accent)');
   const msg = document.getElementById('importMsg');
-  if(msg) msg.innerHTML = `<div class="msg" style="background:rgba(201,168,76,.12);color:var(--accent2);margin-top:10px">
+  if(msg) msg.innerHTML = `<div class="msg" style="background:rgba(194,104,58,.14);color:#e8c97a;margin-top:10px">
     <b>Як увімкнути запис у таблицю:</b><br>
     1. Зайдіть у <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a><br>
     2. APIs & Services → Credentials<br>
